@@ -26,7 +26,7 @@ type ConfigDataBase struct {
 var ConfigInstance *Config
 
 func ReadJson() error {
-	file, err := os.Open("config.rbg_json")
+	file, err := os.Open("config.json")
 	if err != nil {
 		if errors.Is(err, os.ErrNotExist) {
 			err = CreateJson()
@@ -44,7 +44,7 @@ func ReadJson() error {
 		}
 	}(file)
 
-	bytes, err := os.ReadFile("config.rbg_json")
+	bytes, err := os.ReadFile("config.json")
 	if err != nil {
 		fmt.Println(err)
 		return err

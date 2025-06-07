@@ -88,6 +88,5 @@ func main() {
 		}
 
 		fmt.Println("\nГотово")
-
 	}
 }

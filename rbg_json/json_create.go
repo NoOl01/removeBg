@@ -23,15 +23,6 @@ func CreateJson() error {
 	config := Config{
 		OutputPath: "",
 		InputFile:  "",
-		DataBase: ConfigDataBase{
-			DbHost:     "",
-			DbPort:     "",
-			DbUser:     "",
-			DbPassword: "",
-			DbName:     "",
-			DbTable:    "",
-			DbColumn:   "",
-		},
 	}
 
 	encoder := json.NewEncoder(file)

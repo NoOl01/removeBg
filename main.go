@@ -2,44 +2,61 @@ package main
 
 import (
 	"fmt"
-	"log"
-	"os"
 	"os/exec"
 	"removeBg/rbg_json"
+	"runtime"
 	"strings"
 )
 
 func main() {
-	fmt.Println("Читаю конфиг")
-
-	err := rbg_json.ReadJson()
-	if err != nil {
-		log.Panicf("Ошибка при чтении файла: %s\n", err.Error())
+	uos := runtime.GOOS
+	var dist string
+	if uos == "linux" {
+		PrintStatus("Проверяю дистрибутив", "...")
+		dist = getLinuxDistro()
+		PrintStatus("\rПроверяю дистрибутив", "Done\n")
 	}
 
+	PrintStatus("Проверяю установленны ли необходимые файлы", "...")
+
+	err := CheckDependencies(uos, dist)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	PrintStatus("Читаю конфиг", "...")
+
+	err = rbg_json.ReadJson()
+	if err != nil {
+		PrintStatus("Читаю конфиг", "Error\n")
+		fmt.Println(err)
+		return
+	}
+	PrintStatus("Читаю конфиг", "Done\n")
+
+	PrintStatus("Проверяю папку \"images\"", "...")
 	err = CheckDir()
 	if err != nil {
-		log.Panicf("Ошибка при проверке/создании папки: %s\n", err.Error())
+		PrintStatus("Проверяю папку \"images\"", "Error\n")
+		fmt.Println(err)
+		return
 	}
+	PrintStatus("Проверяю папку \"images\"", "Done\n")
 
 	switch rbg_json.ConfigInstance.InputFile {
 	case "":
-		fmt.Println("Удаляю фон из картинок")
 		input, err := ReadCmd()
 		if err != nil {
 			fmt.Println(err)
 			return
 		}
+		PrintStatus("Удаление фона из картинки", "...")
 
-		cmd := exec.Command(
-			"python3", "rembg/remove_bg.py",
+		err = ExecCommand("python3", "rembg/remove_bg.py",
 			fmt.Sprintf("./images/%s", input),
 			fmt.Sprintf("%s/%s", rbg_json.ConfigInstance.OutputPath, input),
 		)
-		cmd.Stdout = os.Stdout
-		cmd.Stderr = os.Stderr
-
-		err = cmd.Run()
 		if err != nil {
 			fmt.Println(err)
 			return
@@ -54,20 +71,16 @@ func main() {
 		}
 
 		filesLen := len(input)
-		fmt.Println("Удаляю фон из картинок")
+		PrintStatus("Удаление фона из картинок", "...")
 
 		for i, file := range input {
 			fileName := strings.TrimSpace(file)
 
-			cmd := exec.Command(
+			err = ExecCommand(
 				"python3", "rembg/remove_bg.py",
 				fmt.Sprintf("./images/%s", fileName),
 				fmt.Sprintf("%s/%s", rbg_json.ConfigInstance.OutputPath, fileName),
 			)
-			cmd.Stdout = os.Stdout
-			cmd.Stderr = os.Stderr
-
-			err = cmd.Run()
 			if err != nil {
 				fmt.Println(err)
 				return
@@ -89,4 +102,13 @@ func main() {
 
 		fmt.Println("\nГотово")
 	}
+}
+
+func commandExist(command string) bool {
+	_, err := exec.LookPath(command)
+	return err == nil
+}
+
+func PrintStatus(task string, status string) {
+	fmt.Printf("\r%-50s | %-10s", task, status)
 }
